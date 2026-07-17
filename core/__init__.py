@@ -1,0 +1,1 @@
+# ThoughtGit Core package
