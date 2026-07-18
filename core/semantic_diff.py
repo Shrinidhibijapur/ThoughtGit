@@ -47,7 +47,7 @@ class SemanticDiffEngine:
         # Step 1: Retrieve all semantically similar chunks across all collections
         chunks = self.store.get_all_chunks_for_diff(
             query_embedding=query_embedding,
-            threshold=SIMILARITY_THRESHOLD,
+            threshold=0.40,
             branch=branch
         )
         

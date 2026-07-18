@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 
 class RawThought(BaseModel):
     content: str
     source: str  # e.g., "vscode", "obsidian", "cli"
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    metadata: Dict[str, str] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 class EmbeddedChunk(BaseModel):
     chunk_id: str
@@ -15,4 +15,4 @@ class EmbeddedChunk(BaseModel):
     source: str
     timestamp: datetime
     collection_name: str
-    metadata: Dict[str, str] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)

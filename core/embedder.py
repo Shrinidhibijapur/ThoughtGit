@@ -195,7 +195,7 @@ class EmbeddingEngine:
         
         embedded_chunks = []
         for idx, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
-            chunk_hash = self._get_hash(f"{thought.timestamp.isoformat()}_{thought.source}_{idx}")
+            chunk_hash = self._get_hash(f"{thought.timestamp.isoformat()}_{thought.source}_{idx}_{chunk_text}")
             chunk_id = f"chunk_{chunk_hash}"
             
             # Carry over metadata and set source-specific tags
@@ -203,6 +203,7 @@ class EmbeddingEngine:
             metadata.update({
                 "source": thought.source,
                 "timestamp": thought.timestamp.isoformat(),
+                "timestamp_epoch": thought.timestamp.timestamp(),
                 "chunk_index": str(idx),
                 "total_chunks": str(len(chunks))
             })
