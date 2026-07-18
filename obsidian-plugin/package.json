@@ -1,0 +1,15 @@
+{
+  "name": "thoughtgit-obsidian",
+  "version": "0.1.0",
+  "description": "ThoughtGit Obsidian Sync plugin",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit && node esbuild.config.mjs production"
+  },
+  "devDependencies": {
+    "obsidian": "^1.1.1",
+    "typescript": "^5.0.0",
+    "esbuild": "^0.19.0"
+  }
+}
