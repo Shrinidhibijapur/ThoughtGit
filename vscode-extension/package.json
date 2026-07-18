@@ -1,0 +1,57 @@
+{
+  "name": "thoughtgit",
+  "displayName": "ThoughtGit",
+  "description": "Semantic Version Control for Human Thinking",
+  "version": "0.1.0",
+  "publisher": "thoughtgit",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "thoughtgit-sidebar-container",
+          "title": "ThoughtGit",
+          "icon": "$(brain)"
+        }
+      ]
+    },
+    "views": {
+      "thoughtgit-sidebar-container": [
+        {
+          "type": "webview",
+          "id": "thoughtgit-sidebar-view",
+          "name": "ThoughtGit Timeline"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "thoughtgit.queryTopic",
+        "title": "ThoughtGit: Query Topic"
+      },
+      {
+        "command": "thoughtgit.showEvolution",
+        "title": "ThoughtGit: Show Concept Evolution"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

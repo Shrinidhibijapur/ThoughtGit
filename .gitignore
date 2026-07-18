@@ -1,0 +1,53 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ThoughtGit Local Storage and Temp Test Data
+.thoughtgit/
+test_thoughtgit_data*
+test_api_db_store*
+scratch_thoughtgit_db/
+scratch_thoughtgit_cache.db
+*.db
+*.sqlite3
+
+# Extracted spec files and scratch explanation notes
+spec_text.txt
+notes.txt
+
+# Editor configurations
+.vscode/
+.idea/
+.project
+.pydevproject
+
+# System files
+Thumbs.db
+.DS_Store
+notes.md
+
+ThoughtGit_Complete_Project_Spec.docx
