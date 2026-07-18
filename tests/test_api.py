@@ -19,7 +19,8 @@ if os.path.exists(test_cache_path):
 
 # Patch the configuration *before* importing the app to redirect database storage
 with patch('core.config.DB_DIR', test_db_dir), \
-     patch('core.config.CACHE_DB_PATH', test_cache_path):
+     patch('core.config.CACHE_DB_PATH', test_cache_path), \
+     patch('core.config.METADATA_DB_PATH', os.path.join(test_db_dir, "metadata.db")):
     from api.main import app, engine, store
     from fastapi.testclient import TestClient
 
