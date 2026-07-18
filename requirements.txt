@@ -10,5 +10,10 @@ mcp>=1.0.0
 fastapi>=0.100.0
 uvicorn>=0.20.0
 
+# Streamlit UI Dashboard (Part 3)
+streamlit>=1.30.0
+pandas>=2.0.0
+plotly>=5.15.0
+
 # Testing
 pytest>=7.0.0

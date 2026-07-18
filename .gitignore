@@ -30,6 +30,7 @@ share/python-wheels/
 .thoughtgit/
 test_thoughtgit_data*
 test_api_db_store*
+test_extended_features_data*
 scratch_thoughtgit_db/
 scratch_thoughtgit_cache.db
 *.db
@@ -38,6 +39,11 @@ scratch_thoughtgit_cache.db
 # Extracted spec files and scratch explanation notes
 spec_text.txt
 notes.txt
+
+# Dependency and compilation files
+node_modules/
+vscode-extension/out/
+obsidian-plugin/main.js
 
 # Editor configurations
 .vscode/
@@ -51,3 +57,4 @@ Thumbs.db
 notes.md
 
 ThoughtGit_Complete_Project_Spec.docx
+thoughtgit_dev_guide.md
