@@ -38,6 +38,9 @@ export class ThoughtGitSidebarProvider implements vscode.WebviewViewProvider {
                 case 'switch-branch':
                     await this._switchBranch(message.branch);
                     break;
+                case 'open-visualizer':
+                    vscode.commands.executeCommand('thoughtgit.showInteractiveMap');
+                    break;
             }
         });
 
@@ -449,6 +452,8 @@ export class ThoughtGitSidebarProvider implements vscode.WebviewViewProvider {
         <h2>🧠 ThoughtGit</h2>
         <div class="tagline">Version Control for Human Thinking</div>
 
+        <button class="form-btn" style="margin-bottom: 14px; background: linear-gradient(135deg, #8b5cf6 0%, #00f2fe 100%);" onclick="openVisualizer()">🌐 Open Project Visualizer</button>
+
         <div class="tabs">
             <button id="btnSearch" class="tab-btn active" onclick="switchPanel('search')">Recall</button>
             <button id="btnEvolution" class="tab-btn" onclick="switchPanel('evolution')">Evolution</button>
@@ -610,6 +615,10 @@ export class ThoughtGitSidebarProvider implements vscode.WebviewViewProvider {
         function triggerBranchSwitch() {
             const selector = document.getElementById('branchSelector');
             vscode.postMessage({ type: 'switch-branch', branch: selector.value });
+        }
+
+        function openVisualizer() {
+            vscode.postMessage({ type: 'open-visualizer' });
         }
 
         function showIngestStatus(status, msg) {

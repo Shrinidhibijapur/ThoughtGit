@@ -20,7 +20,7 @@
         {
           "id": "thoughtgit-sidebar-container",
           "title": "ThoughtGit",
-          "icon": "$(brain)"
+          "icon": "media/brain.svg"
         }
       ]
     },
@@ -41,6 +41,10 @@
       {
         "command": "thoughtgit.showEvolution",
         "title": "ThoughtGit: Show Concept Evolution"
+      },
+      {
+        "command": "thoughtgit.showInteractiveMap",
+        "title": "ThoughtGit: Open Project Visualizer"
       }
     ]
   },
