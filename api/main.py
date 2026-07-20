@@ -588,6 +588,9 @@ def get_codebase_flow(workspace_dir: str = Query(...)) -> Dict[str, Any]:
         folders = set(get_parent_folder(fp) for fp in file_paths)
         nodes = [{"id": f, "label": f + "/"} for f in folders]
         
+        # Build file list nodes for popups
+        file_nodes = [{"id": os.path.relpath(fp, workspace_dir).replace("\\", "/"), "label": os.path.basename(fp)} for fp in file_paths]
+        
         # Generate Mermaid String
         mermaid_lines = ["graph TD"]
         mermaid_lines.append("    classDef folderNode fill:#0b132b,stroke:#00f2fe,stroke-width:2.5px,color:#ffffff,rx:10px,font-weight:bold;")
@@ -606,6 +609,6 @@ def get_codebase_flow(workspace_dir: str = Query(...)) -> Dict[str, Any]:
             mermaid_lines.append(f'    class {f_id} folderNode;')
             
         mermaid_str = "\n".join(mermaid_lines)
-        return {"mermaid_code": mermaid_str, "nodes": nodes}
+        return {"mermaid_code": mermaid_str, "nodes": nodes, "files": file_nodes}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
