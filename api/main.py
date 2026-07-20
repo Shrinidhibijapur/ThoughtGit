@@ -22,6 +22,34 @@ from core.memory_health import MemoryHealthEngine
 
 app = FastAPI(title="ThoughtGit API Server")
 
+import os
+import re
+import urllib.parse
+from fastapi import Request
+from core.config import CURRENT_PROJECT
+
+@app.middleware("http")
+async def add_project_context(request: Request, call_next):
+    workspace_dir = request.headers.get("x-workspace-dir")
+    if workspace_dir:
+        try:
+            decoded_path = urllib.parse.unquote(workspace_dir)
+            # Extract folder name
+            folder_name = os.path.basename(decoded_path.replace("\\", "/").rstrip("/"))
+            # Sanitize to alphanumeric
+            clean_name = re.sub(r'[^a-zA-Z0-9_-]', '', folder_name).lower()
+            if clean_name:
+                token = CURRENT_PROJECT.set(clean_name)
+                try:
+                    response = await call_next(request)
+                    return response
+                  # Note: contextvars are reset automatically on request-local context end, but this is safe
+                finally:
+                    CURRENT_PROJECT.reset(token)
+        except Exception:
+            pass
+    return await call_next(request)
+
 # Global instances of core and extended engines
 engine = EmbeddingEngine()
 store = ThoughtStore()

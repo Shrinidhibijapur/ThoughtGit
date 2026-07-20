@@ -10,7 +10,12 @@ class ThoughtStore:
         self.client = chromadb.PersistentClient(path=DB_DIR)
 
     def _parse_collection_date(self, collection_name: str) -> Optional[datetime]:
-        """Parses the year and month from collection name format: thoughts_{branch}_{YYYY}_{MM}"""
+        """Parses the year and month from collection name format: [project_]thoughts_{branch}_{YYYY}_{MM}"""
+        from core.config import CURRENT_PROJECT
+        proj = CURRENT_PROJECT.get()
+        if proj != "default" and collection_name.startswith(f"{proj}_"):
+            collection_name = collection_name[len(proj) + 1:]
+
         parts = collection_name.split("_")
         if len(parts) >= 3:
             try:
@@ -22,7 +27,12 @@ class ThoughtStore:
         return None
 
     def _get_branch_from_collection(self, collection_name: str) -> str:
-        """Extracts branch name from collection name: thoughts_{branch}_{YYYY}_{MM}"""
+        """Extracts branch name from collection name: [project_]thoughts_{branch}_{YYYY}_{MM}"""
+        from core.config import CURRENT_PROJECT
+        proj = CURRENT_PROJECT.get()
+        if proj != "default" and collection_name.startswith(f"{proj}_"):
+            collection_name = collection_name[len(proj) + 1:]
+
         parts = collection_name.split("_")
         if len(parts) >= 3 and parts[0] == "thoughts":
             # Extract everything between 'thoughts' and '{YYYY}_{MM}'
@@ -75,9 +85,14 @@ class ThoughtStore:
         """Lists all thought collections, sorted chronologically."""
         collections = self.client.list_collections()
         thought_colls = []
+        
+        from core.config import CURRENT_PROJECT
+        proj = CURRENT_PROJECT.get()
+        prefix = f"{proj}_thoughts_" if proj != "default" else "thoughts_"
+        
         for coll in collections:
             name = coll.name
-            if name.startswith("thoughts_"):
+            if name.startswith(prefix):
                 if branch is None or self._get_branch_from_collection(name) == branch:
                     thought_colls.append(name)
                     

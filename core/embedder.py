@@ -191,7 +191,13 @@ class EmbeddingEngine:
         # Format partition collections naming: thoughts_{branch}_{YYYY}_{MM}
         branch = thought.metadata.get("branch", "main")
         year_month = thought.timestamp.strftime("%Y_%m")
-        collection_name = f"thoughts_{branch}_{year_month}"
+        
+        from core.config import CURRENT_PROJECT
+        proj = CURRENT_PROJECT.get()
+        if proj != "default":
+            collection_name = f"{proj}_thoughts_{branch}_{year_month}"
+        else:
+            collection_name = f"thoughts_{branch}_{year_month}"
         
         embedded_chunks = []
         for idx, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):

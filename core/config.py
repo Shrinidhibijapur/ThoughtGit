@@ -17,6 +17,9 @@ DB_DIR = os.path.join(BASE_DIR, "chroma")
 CACHE_DB_PATH = os.path.join(BASE_DIR, "embed_cache.db")
 METADATA_DB_PATH = os.path.join(BASE_DIR, "metadata.db")
 
+from contextvars import ContextVar
+CURRENT_PROJECT: ContextVar[str] = ContextVar("current_project", default="default")
+
 # Ensure base directories exist
 os.makedirs(BASE_DIR, exist_ok=True)
 os.makedirs(DB_DIR, exist_ok=True)

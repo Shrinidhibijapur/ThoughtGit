@@ -754,11 +754,15 @@ export class ThoughtGitSidebarProvider implements vscode.WebviewViewProvider {
 }
 
 function getJSON(path: string, callback: (err: any, data: any) => void) {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
     const options = {
         hostname: '127.0.0.1',
         port: 8765,
         path: path,
-        method: 'GET'
+        method: 'GET',
+        headers: {
+            'X-Workspace-Dir': encodeURIComponent(workspaceFolder)
+        }
     };
 
     const req = http.request(options, (res) => {
@@ -783,6 +787,7 @@ function getJSON(path: string, callback: (err: any, data: any) => void) {
 }
 
 function postJSON(path: string, payload: any, callback: (err: any, data: any) => void) {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
     const bodyString = JSON.stringify(payload);
     const options = {
         hostname: '127.0.0.1',
@@ -791,7 +796,8 @@ function postJSON(path: string, payload: any, callback: (err: any, data: any) =>
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(bodyString)
+            'Content-Length': Buffer.byteLength(bodyString),
+            'X-Workspace-Dir': encodeURIComponent(workspaceFolder)
         }
     };
 
