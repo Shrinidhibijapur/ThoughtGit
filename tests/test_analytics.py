@@ -130,9 +130,9 @@ class TestAnalyticsEngine(unittest.TestCase):
         
         res = self.velocity_engine.calculate_velocity("vector", mock_query_emb)
         self.assertEqual(res["total_chunks"], 3)
-        self.assertEqual(res["periods_tracked"], 2) # June and July
-        self.assertEqual(res["volume_velocity"], 1.5) # 3 chunks / 2 periods
-        self.assertEqual(res["volume_trend"], "decreasing") # June (2 chunks) -> July (1 chunk)
+        self.assertEqual(res["periods_tracked"], 3) # June 10, June 20, July 5
+        self.assertEqual(res["volume_velocity"], 1.0) # 3 chunks / 3 periods
+        self.assertEqual(res["volume_trend"], "stable")
 
     def test_forgetting_curve_decay_and_scheduling(self):
         topic = "hdbscan clustering"
