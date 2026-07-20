@@ -1,6 +1,6 @@
 import numpy as np
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Tuple, Optional
 from sklearn.cluster import HDBSCAN
 from core.config import DRIFT_THRESHOLD, SIMILARITY_THRESHOLD
@@ -40,13 +40,14 @@ class SemanticDiffEngine:
         branch: str = "main"
     ) -> Dict[str, Any]:
         """
-        Retrieves all similar thoughts across time buckets, clusters each bucket
-        using HDBSCAN to find the conceptual centroid, tracks centroid drift over time,
-        and classifies each drift event.
+        Retrieves all similar thoughts for a topic, groups them by exact timestamp
+        to represent each note-saving event, tracks drift between consecutive events,
+        and formats timestamps to Indian Standard Time (GMT+5:30).
         """
         # Step 1: Retrieve all semantically similar chunks across all collections
         chunks = self.store.get_all_chunks_for_diff(
             query_embedding=query_embedding,
+            topic=topic,
             threshold=0.40,
             branch=branch
         )
@@ -58,96 +59,76 @@ class SemanticDiffEngine:
                 "drift_events": []
             }
 
-        # Step 2: Group chunks by time bucket (month / collection)
-        buckets: Dict[str, List[Dict[str, Any]]] = {}
+        # Step 2: Group chunks by their exact timestamp (representing one saved thought event)
+        timestamp_groups: Dict[str, List[Dict[str, Any]]] = {}
         for chunk in chunks:
-            coll_name = chunk["collection"]
-            buckets.setdefault(coll_name, []).append(chunk)
+            ts = chunk.get("timestamp") or chunk.get("metadata", {}).get("timestamp", "")
+            group_key = ts if ts else chunk["collection"]
+            timestamp_groups.setdefault(group_key, []).append(chunk)
 
-        # Sort collections chronologically
-        sorted_coll_names = self.store.list_collections(branch=branch)
-        active_colls = [c for c in sorted_coll_names if c in buckets]
+        # Sort the group keys chronologically
+        def get_group_time(group_key):
+            if group_key:
+                try:
+                    return datetime.fromisoformat(group_key.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+            return datetime.min
 
+        sorted_group_keys = sorted(timestamp_groups.keys(), key=get_group_time)
+
+        IST = timezone(timedelta(hours=5, minutes=30))
         snapshots = []
         centroids = {}
 
-        # Step 3: Compute centroid for each collection bucket
-        for coll_name in active_colls:
-            coll_chunks = buckets[coll_name]
-            embeddings = [c["embedding"] for c in coll_chunks if c.get("embedding") is not None]
+        # Step 3: Format snapshots and compute centroids for each saved event
+        for idx, key in enumerate(sorted_group_keys):
+            group_chunks = timestamp_groups[key]
+            embeddings = [c["embedding"] for c in group_chunks if c.get("embedding") is not None]
             
             if not embeddings:
                 continue
                 
-            # Run HDBSCAN if we have enough data, otherwise fallback to simple mean
-            if len(embeddings) >= min_cluster_size:
-                try:
-                    # Convert to numpy array
-                    X = np.array(embeddings)
-                    
-                    # HDBSCAN clustering using cosine metric
-                    clusterer = HDBSCAN(min_cluster_size=min_cluster_size, metric="cosine")
-                    clusterer.fit(X)
-                    labels = clusterer.labels_
-                    
-                    # Find dominant cluster (exclude noise -1)
-                    unique_labels = set(labels)
-                    unique_labels.discard(-1)
-                    
-                    if unique_labels:
-                        # Find the label with the most points
-                        label_counts = {l: np.count_nonzero(labels == l) for l in unique_labels}
-                        dominant_label = max(label_counts, key=label_counts.get)
-                        
-                        # Get embeddings belonging to dominant cluster
-                        dominant_indices = np.where(labels == dominant_label)[0]
-                        dominant_embeddings = [embeddings[idx] for idx in dominant_indices]
-                        centroid = self._compute_centroid(dominant_embeddings)
-                        
-                        # Store info
-                        clustered_chunks = [coll_chunks[idx] for idx in dominant_indices]
-                    else:
-                        # Fallback: all points are noise, compute mean of all points
-                        centroid = self._compute_centroid(embeddings)
-                        clustered_chunks = coll_chunks
-                except Exception:
-                    # Fallback on any failure
-                    centroid = self._compute_centroid(embeddings)
-                    clustered_chunks = coll_chunks
-            else:
-                centroid = self._compute_centroid(embeddings)
-                clustered_chunks = coll_chunks
-
-            # Record snapshot details
-            avg_len = sum(len(c["text"]) for c in coll_chunks) / len(coll_chunks)
-            centroids[coll_name] = centroid
+            centroid = self._compute_centroid(embeddings)
+            group_id = f"group_{idx}"
+            centroids[group_id] = centroid
             
-            # Format friendly time label, e.g. thoughts_main_2026_07 -> "2026-07"
+            # Format fallback friendly time label, e.g. thoughts_main_2026_07 -> "2026-07"
+            coll_name = group_chunks[0]["collection"]
             parts = coll_name.split("_")
-            time_label = f"{parts[-2]}-{parts[-1]}" if len(parts) >= 3 else coll_name
+            fallback_label = f"{parts[-2]}-{parts[-1]}" if len(parts) >= 3 else coll_name
             
+            # Format time label to Indian Standard Time (UTC +5:30)
+            time_label = fallback_label
+            if key and not key.startswith("thoughts_"):
+                try:
+                    dt = datetime.fromisoformat(key.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    ist_dt = dt.astimezone(IST)
+                    time_label = ist_dt.strftime("%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    pass
+            
+            avg_len = sum(len(c["text"]) for c in group_chunks) / len(group_chunks)
             snapshots.append({
-                "collection": coll_name,
+                "collection": group_chunks[0]["collection"],
                 "time_label": time_label,
-                "chunks_count": len(coll_chunks),
+                "chunks_count": len(group_chunks),
                 "avg_text_length": avg_len,
-                "sample_texts": [c["text"] for c in clustered_chunks[:3]]
+                "sample_texts": [c["text"] for c in group_chunks[:3]]
             })
 
-        # Step 4 & 5: Compute drift between successive centroids and classify drift events
+        # Step 4 & 5: Compute drift between successive saved events
         drift_events = []
-        for i in range(len(active_colls) - 1):
-            coll_a = active_colls[i]
-            coll_b = active_colls[i+1]
+        for i in range(len(sorted_group_keys) - 1):
+            snap_a = snapshots[i]
+            snap_b = snapshots[i+1]
             
-            centroid_a = centroids[coll_a]
-            centroid_b = centroids[coll_b]
+            centroid_a = centroids[f"group_{i}"]
+            centroid_b = centroids[f"group_{i+1}"]
             
             distance = self._cosine_distance(centroid_a, centroid_b)
-            
-            # Retrieve metadata for length calculations
-            snap_a = next(s for s in snapshots if s["collection"] == coll_a)
-            snap_b = next(s for s in snapshots if s["collection"] == coll_b)
             
             len_a = snap_a["avg_text_length"]
             len_b = snap_b["avg_text_length"]
@@ -160,7 +141,6 @@ class SemanticDiffEngine:
                 drift_type = "changed_direction"
                 summary = "Significant revision of core concepts."
             elif distance > DRIFT_THRESHOLD:
-                # Compare average length: increase of > 15% counts as deepened
                 if len_b > len_a * 1.15:
                     drift_type = "deepened"
                     summary = "Understanding deepened with more detailed descriptions."

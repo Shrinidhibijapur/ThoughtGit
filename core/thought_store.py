@@ -149,6 +149,7 @@ class ThoughtStore:
     def get_all_chunks_for_diff(
         self,
         query_embedding: List[float],
+        topic: Optional[str] = None,
         threshold: float = SIMILARITY_THRESHOLD,
         branch: str = "main"
     ) -> List[Dict[str, Any]]:
@@ -168,12 +169,26 @@ class ThoughtStore:
             if count == 0:
                 continue
                 
-            # Query up to all elements (or max 100 for safety per collection bucket)
-            results = collection.query(
-                query_embeddings=[query_embedding],
-                n_results=min(100, count),
-                include=["documents", "metadatas", "distances", "embeddings"]
-            )
+            results = None
+            if topic:
+                try:
+                    # Try filtering strictly by topic hint first
+                    results = collection.query(
+                        query_embeddings=[query_embedding],
+                        n_results=min(100, count),
+                        where={"topic_hint": topic},
+                        include=["documents", "metadatas", "distances", "embeddings"]
+                    )
+                except Exception:
+                    results = None
+                    
+            # Fallback to general vector search if no metadata matches or filter is empty
+            if not results or not results["ids"] or not results["ids"][0]:
+                results = collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=min(100, count),
+                    include=["documents", "metadatas", "distances", "embeddings"]
+                )
             
             if results and results["ids"]:
                 for i in range(len(results["ids"][0])):
