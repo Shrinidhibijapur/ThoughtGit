@@ -59,37 +59,28 @@ A full-width, dynamic visual dashboard split into two modules:
 ---
 
 ## 🛠️ Repository Architecture
-The project is split into clean, modular layers:
+The repository is designed to be fully self-contained and modular:
 ```text
 thoughtgit/
-├── api/                   # FastAPI backend server (endpoints, routing)
-├── core/                  # Core logic algorithms:
-│   ├── semantic_diff.py   # Computes vector centroid shifts & drift
-│   ├── forgetting_curve.py# Spaced repetition retention equations
-│   ├── thought_store.py   # ChromaDB vector store interfaces
-│   └── memory_health.py   # Spacing, activity, and diversity metrics
-├── vscode-extension/      # VS Code client sidebar & visualizer panels
+├── vscode-extension/      # The entire self-contained VS Code Extension client & Python backend
+│   ├── api/               # FastAPI backend server (endpoints, routing)
+│   ├── core/              # Core logic, ChromaDB, cognitive spacing algorithms
+│   ├── scratch/           # Background process managers
+│   ├── ui/                # Streamlit analytics dashboard
+│   ├── src/               # VS Code TypeScript client code
+│   └── tests/             # Python unittest suite
 ├── obsidian-plugin/       # Obsidian sync vault plugin
-├── ui/                    # Streamlit dashboard analytics UI
-└── tests/                 # Full python unittest suite
+└── mcp_server/            # Model Context Protocol integration server
 ```
 
 ---
 
 ## 🚀 Installation & Usage
 
-### Step 1: Start the Backend Server
-ThoughtGit runs a local FastAPI semantic analyzer and Streamlit visualization portal. Make sure you have [Ollama](https://ollama.com/) running locally (with the `Llama3` model loaded).
+### Step 1: Pull the Embedding Model
+ThoughtGit runs a local semantic vector search engine. Make sure you have [Ollama](https://ollama.com/) running locally and pull the text embedding model:
 ```bash
-# Clone the repository
-git clone https://github.com/Shrinidhibijapur/ThoughtGit.git
-cd ThoughtGit
-
-# Install backend dependencies
-pip install -r requirements.txt
-
-# Start FastAPI and Streamlit backend services
-python scratch/run_all.py
+ollama pull nomic-embed-text
 ```
 
 ### Step 2: Install from VS Code Marketplace
@@ -97,7 +88,8 @@ python scratch/run_all.py
 2. Press **`Ctrl+Shift+X`** (or `Cmd+Shift+X` on macOS) to open the Extensions tab.
 3. Search for **`ThoughtGit`** and click **Install**.
 4. Click the **Brain Icon** 🧠 in your VS Code Activity Bar on the left.
-5. Click **Open Project Visualizer** to launch the dynamic, real-time updated concept map and folder structure flow!
+5. Open any project workspace. The extension will **automatically set up the Python environment and run the backend silently in the background** on launch!
+6. Click **Open Project Visualizer** to launch the dynamic, real-time updated concept map and folder structure flow!
 
 ---
 

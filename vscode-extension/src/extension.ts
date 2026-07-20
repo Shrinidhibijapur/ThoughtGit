@@ -1,12 +1,19 @@
 import * as vscode from 'vscode';
 import * as http from 'http';
 import * as path from 'path';
+import { spawn, ChildProcess } from 'child_process';
+import * as os from 'os';
 
 // Supported code extensions
 const CODE_EXTENSIONS = new Set(['.py', '.ts', '.js', '.rs', '.go', '.java', '.cpp', '.c', '.h', '.cs', '.sh', '.rb']);
 
+let backendProcess: ChildProcess | null = null;
+
 export function activate(context: vscode.ExtensionContext) {
     console.log('ThoughtGit extension is now active!');
+    
+    // Automatically spin up the backend server in the background
+    ensureBackendRunning(context);
 
     // Hook: Ingest on save
     let saveHook = vscode.workspace.onDidSaveTextDocument(async (document: vscode.TextDocument) => {
@@ -668,7 +675,7 @@ class InteractiveMapPanel {
                     }
                     break;
                 case 'codebase-flow-data':
-                    flowNodes = message.data.nodes;
+                    flowNodes = message.data.files;
                     renderCodebaseFlow(message.data.mermaid_code);
                     break;
             }
@@ -1090,3 +1097,88 @@ function getJSON(path: string, callback: (err: any, data: any) => void) {
 
 // Expose Sidebar Provider for Webview
 import { ThoughtGitSidebarProvider } from './sidebar';
+
+export function deactivate() {
+    if (backendProcess) {
+        console.log("Terminating ThoughtGit backend process...");
+        backendProcess.kill();
+    }
+}
+
+async function ensureBackendRunning(context: vscode.ExtensionContext) {
+    const isRunning = await checkBackendHealth();
+    if (isRunning) {
+        console.log("ThoughtGit API backend is already active.");
+        return;
+    }
+
+    console.log("Starting local ThoughtGit backend...");
+    const extPath = context.extensionPath;
+    const pythonExe = os.platform() === 'win32'
+        ? path.join(extPath, 'venv', 'Scripts', 'python.exe')
+        : path.join(extPath, 'venv', 'bin', 'python');
+
+    const venvExists = require('fs').existsSync(pythonExe);
+    
+    if (!venvExists) {
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "ThoughtGit: Preparing local Python environment...",
+            cancellable: false
+        }, async (progress) => {
+            try {
+                // Create virtual env
+                await runCommand('python', ['-m', 'venv', 'venv'], extPath);
+                // Install requirements
+                const pipExe = os.platform() === 'win32'
+                    ? path.join(extPath, 'venv', 'Scripts', 'pip.exe')
+                    : path.join(extPath, 'venv', 'bin', 'pip');
+                await runCommand(pipExe, ['install', '-r', 'requirements.txt'], extPath);
+                
+                // Launch server
+                launchServer(pythonExe, extPath);
+            } catch (err: any) {
+                vscode.window.showErrorMessage(`Failed to set up Python environment: ${err.message}`);
+            }
+        });
+    } else {
+        // Launch server immediately
+        launchServer(pythonExe, extPath);
+    }
+}
+
+function launchServer(pythonExe: string, extPath: string) {
+    const scriptPath = path.join(extPath, 'scratch', 'run_all.py');
+    backendProcess = spawn(pythonExe, [scriptPath], {
+        cwd: extPath,
+        detached: false
+    });
+
+    backendProcess.stdout?.on('data', (data) => console.log(`Backend stdout: ${data}`));
+    backendProcess.stderr?.on('data', (data) => console.error(`Backend stderr: ${data}`));
+    backendProcess.on('close', (code) => {
+        console.log(`Backend process exited with code ${code}`);
+        backendProcess = null;
+    });
+}
+
+function checkBackendHealth(): Promise<boolean> {
+    return new Promise((resolve) => {
+        http.get('http://127.0.0.1:8765/health', (res) => {
+            resolve(res.statusCode === 200);
+        }).on('error', () => {
+            resolve(false);
+        });
+    });
+}
+
+function runCommand(command: string, args: string[], cwd: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const proc = spawn(command, args, { cwd });
+        proc.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`Command ${command} exited with code ${code}`));
+        });
+        proc.on('error', (err) => reject(err));
+    });
+}

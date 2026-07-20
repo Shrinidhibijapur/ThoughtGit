@@ -1,0 +1,15 @@
+# Exclude virtual environment
+venv/**
+
+# Exclude node modules
+node_modules/**
+
+# Exclude source code files (only compiled JS in out/ is needed)
+src/**
+tsconfig.json
+package-lock.json
+
+# Exclude test cache/logs
+.git/**
+.vscode/**
+*.vsix

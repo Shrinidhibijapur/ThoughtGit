@@ -58,3 +58,7 @@ notes.md
 
 ThoughtGit_Complete_Project_Spec.docx
 thoughtgit_dev_guide.md
+
+# VS Code packaged extension archives
+*.vsix
+

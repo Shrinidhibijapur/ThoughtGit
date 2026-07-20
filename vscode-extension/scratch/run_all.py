@@ -20,9 +20,9 @@ def main():
     # 1. Check Ollama
     print(">>> Checking Ollama local service...")
     if check_service("http://localhost:11434"):
-        print("✓ Ollama local service is ACTIVE.")
+        print("[OK] Ollama local service is ACTIVE.")
     else:
-        print("⚠ WARNING: Ollama local service is OFFLINE.")
+        print("[WARN] WARNING: Ollama local service is OFFLINE.")
         print("Please make sure Ollama is started (or download it from https://ollama.com).")
         print("ThoughtGit will run in fallback mock-embedding mode until Ollama is active.\n")
 
@@ -50,9 +50,9 @@ def main():
             break
 
     if backend_ready:
-        print("✓ FastAPI API backend is ACTIVE.")
+        print("[OK] FastAPI API backend is ACTIVE.")
     else:
-        print("⚠ Backend server startup is taking longer than expected. Continuing...")
+        print("[WARN] Backend server startup is taking longer than expected. Continuing...")
 
     # 4. Start Streamlit Dashboard
     print(">>> Starting Streamlit Dashboard (port 8501)...")
@@ -67,7 +67,7 @@ def main():
     
     # 5. Open Web Browser
     dashboard_url = "http://localhost:8501"
-    print(f"✓ Opening dashboard in browser: {dashboard_url}")
+    print(f"[OK] Opening dashboard in browser: {dashboard_url}")
     webbrowser.open(dashboard_url)
 
     print("\nThoughtGit is running successfully!")
